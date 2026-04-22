@@ -7,13 +7,12 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyu1twHs2RzhrKe
 // Estado Local
 let categories = [];
 let bookmarks = [];
+let notesHtml = ''; // Guarda as anotações
 let activeCategoryId = 'cat_all';
 let searchQuery = '';
 let isEditMode = false;
 
-// ==========================================
-// ELEMENTOS DOM (Corrigido)
-// ==========================================
+// Elementos DOM
 const sidebar = document.getElementById('sidebar');
 const sidebarOverlay = document.getElementById('sidebar-overlay');
 const bookmarksGrid = document.getElementById('bookmarks-grid');
@@ -25,13 +24,16 @@ const syncStatus = document.getElementById('sync-status');
 const themeToggle = document.getElementById('theme-toggle');
 const searchInput = document.getElementById('search-input');
 
+// Elementos Anotações
+const notesModal = document.getElementById('notes-modal');
+const notesEditor = document.getElementById('notes-editor');
+
 // ==========================================
 // THEME (Dark/Light Mode)
 // ==========================================
 function initTheme() {
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
         document.body.classList.add('dark-theme');
         document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
@@ -69,13 +71,18 @@ async function carregarDaNuvem() {
         const response = await fetch(APPS_SCRIPT_URL);
         const data = await response.json();
         
-        if (!data.categories || data.categories.length === 0) {
+        // Separa os dados lidos do App Script (Células A1 e A2)
+        const bd = data.bookmarksData || { categories: [], bookmarks: [] };
+        notesHtml = data.notesData || '';
+        
+        if (!bd.categories || bd.categories.length === 0) {
             categories = [{ id: 'cat_all', name: 'Todos' }, { id: 'cat_geral', name: 'Geral' }];
             bookmarks = [];
         } else {
-            categories = data.categories;
-            bookmarks = data.bookmarks;
+            categories = bd.categories;
+            bookmarks = bd.bookmarks;
         }
+        
         render();
         syncStatus.innerHTML = '<i data-lucide="cloud-check"></i> Sincronizado';
     } catch (error) {
@@ -83,14 +90,17 @@ async function carregarDaNuvem() {
         syncStatus.innerHTML = '<i data-lucide="cloud-off"></i> Erro ao conectar';
         categories = JSON.parse(localStorage.getItem('bkp_categories')) || [{ id: 'cat_all', name: 'Todos' }];
         bookmarks = JSON.parse(localStorage.getItem('bkp_bookmarks')) || [];
+        notesHtml = localStorage.getItem('bkp_notes') || '';
         render();
     }
     lucide.createIcons();
 }
 
 async function salvarNaNuvem() {
+    // Backup Local
     localStorage.setItem('bkp_categories', JSON.stringify(categories));
     localStorage.setItem('bkp_bookmarks', JSON.stringify(bookmarks));
+    localStorage.setItem('bkp_notes', notesHtml);
     
     syncStatus.innerHTML = '<i data-lucide="refresh-cw" class="spin"></i> Salvando...';
     lucide.createIcons();
@@ -100,7 +110,10 @@ async function salvarNaNuvem() {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ categories, bookmarks })
+            body: JSON.stringify({ 
+                bookmarksData: { categories, bookmarks },
+                notesData: notesHtml 
+            })
         });
         syncStatus.innerHTML = '<i data-lucide="cloud-check"></i> Sincronizado';
     } catch (error) {
@@ -109,6 +122,30 @@ async function salvarNaNuvem() {
     }
     lucide.createIcons();
 }
+
+// ==========================================
+// EDITOR DE ANOTAÇÕES (RICH TEXT)
+// ==========================================
+document.getElementById('btn-notes').onclick = () => {
+    notesEditor.innerHTML = notesHtml; // Carrega as anotações atuais
+    notesModal.classList.remove('hidden');
+};
+
+document.getElementById('close-notes-modal').onclick = () => {
+    notesModal.classList.add('hidden');
+};
+
+document.getElementById('save-notes-btn').onclick = () => {
+    notesHtml = notesEditor.innerHTML; // Salva o HTML gerado pelo editor
+    notesModal.classList.add('hidden');
+    salvarNaNuvem(); // Envia para a nuvem
+};
+
+// Formatação do texto do editor
+window.formatText = (command) => {
+    document.execCommand(command, false, null);
+    notesEditor.focus();
+};
 
 // ==========================================
 // INTERFACE E RENDERIZAÇÃO
@@ -230,7 +267,6 @@ document.getElementById('btn-add-category').onclick = () => {
     categoryForm.reset(); 
     categoryModal.classList.remove('hidden'); 
 };
-
 document.getElementById('close-category-modal').onclick = () => categoryModal.classList.add('hidden');
 
 categoryForm.onsubmit = (e) => {

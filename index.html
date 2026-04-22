@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,10 +11,32 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
+
 <body>
+
+    <div id="notes-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content" style="max-width: 600px;">
+            <h2>Anotações</h2>
+            <div class="editor-toolbar">
+                <button type="button" onclick="formatText('bold')" title="Negrito"><i data-lucide="bold"></i></button>
+                <button type="button" onclick="formatText('italic')" title="Itálico"><i
+                        data-lucide="italic"></i></button>
+                <button type="button" onclick="formatText('underline')" title="Sublinhado"><i
+                        data-lucide="underline"></i></button>
+            </div>
+            <div id="notes-editor" contenteditable="true" class="rich-text-editor"
+                placeholder="Escreva suas anotações aqui..."></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-text" id="close-notes-modal">Cancelar</button>
+                <button type="button" class="btn-solid" id="save-notes-btn">Salvar Anotações</button>
+            </div>
+        </div>
+    </div>
+
     <div class="app-container">
         <div id="sidebar-overlay" class="overlay"></div>
-        
+
         <aside id="sidebar" class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
@@ -24,9 +47,9 @@
                     <i data-lucide="x"></i>
                 </button>
             </div>
-            
+
             <nav id="category-list" class="category-list"></nav>
-            
+
             <div id="sidebar-footer" class="sidebar-footer hidden">
                 <button id="btn-add-category" class="btn-dashed">
                     <i data-lucide="plus"></i>
@@ -46,8 +69,12 @@
                         <input type="text" id="search-input" placeholder="Pesquisar...">
                     </div>
                 </div>
-             
+
                 <div class="header-actions">
+                    <button id="btn-notes" class="btn-text" style="display: flex; align-items: center; gap: 6px;">
+                        <i data-lucide="file-text"></i> Anotações
+                    </button>
+
                     <span id="sync-status" class="sync-status"><i data-lucide="cloud"></i> Nuvem</span>
                     <button id="theme-toggle" class="icon-btn" title="Alternar Tema">
                         <i data-lucide="moon" id="theme-icon"></i>
@@ -61,6 +88,7 @@
                         <span>Organizar</span>
                     </button>
                 </div>
+
             </header>
 
             <div class="content-body">
@@ -120,4 +148,5 @@
     </div>
     <script src="script.js"></script>
 </body>
+
 </html>
